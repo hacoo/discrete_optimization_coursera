@@ -238,3 +238,10 @@ ENV/
 /site
 
 # End of https://www.gitignore.io/api/c++,linux,emacs,matlab,python
+
+# course-specific stuff
+tmp.data
+_coursera
+.depend
+.gdb_history
+*.pytmp.data

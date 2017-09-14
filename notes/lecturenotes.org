@@ -1,0 +1,195 @@
+Notes on Discrete Optimization - University of Melbourne / Coursera 
+
+Course webpage: https://www.coursera.org/learn/discrete-optimization?authMode=login
+
+
+* Week 1 
+** Motivation
+   - Solve discrete optimization problems
+     - Many are NP-complete
+     - And yet... they are everywhere!
+     - How??
+
+   - NP-Complete definition:
+     - Efficient verification
+     - All other NP problems reduce to it
+     
+   - In the worse case, exponential time.
+
+   - Example problems:
+     - Shipping / logistics
+     - Sports scheduling
+    
+   - Exponential time:
+     - Hockey stick behavior
+     - A fundamental technique: push the hockey stick curve
+     - If this fails: approximate!
+    
+   - Example 1: kidney exchange
+     - Nodes connect to donatable kidneys
+     - Cover graph with cycles such that every node belongs to exactly one cycle
+   
+   - Example 2: disaster management
+     - Repair electic grid as quickly as possible after a blackout
+     - Combines logistics problem and power flow problem
+       - I.e., schedule repairs such that size of blackout is minimized
+
+* Week 2 - Knapsack
+** L1 - Greedy
+
+   - Usually n log n - you can assign a greedy value based on examining a single item, 
+     then select most greedy-valuable first
+
+   - idea 1: lightest first...
+   - idea 2: most valuable first...
+   - idea 3: most value-dense first...
+
+   - hard to prove correct, quality not guaranteed. But, it's often the easiest way
+     to develop a feasible solution!
+
+
+** L2 - Modeling
+   
+   - This will be simple for knapsack!
+   - But: one of the most important things is, how TF do we formalize / model the problem?
+   - How do we formalize this?
+
+   - For knapsack:
+     - Inputs are a set of items, I, and a capacity, K:
+       - each i e I is characterized by:
+         - weight wi
+         - value vi
+     - K is a maximum weight, i.e., k >= 0
+
+   - We also have 'decision variables':
+     - X is a set of DVs, each xi is 1 if i is in the solution, else xi is 0
+
+   - In addition to inputs, we must define an objective function:
+     - specifies the quality of any given solution
+     - For knapsack: O = (sum (i e I) vi * xi)       
+     
+   - Finally, we have constraints - functions which must be true:
+     - for knapsack: C = (sum (i e I) (xi * wi)) <= K
+     
+   - So, computing C is O(n), and O is O(n), where n = |I|
+   - But how many possible solutions are there? 2^n!!! Shit.
+
+** L3 - Dynamic Programming
+   
+   - OK! So one of the first techniques for reducing exp. runtime is dynamic programming.
+   - Works great for some problems :) It won't quite work for knapsack, and we'll see why...
+   - Basic principals:
+     - divide and conquer
+     - bottom up
+     - repeated subproblems
+       
+   - I = {1...n}
+   - O(k, j) is the optimal solution for j items and cap. k
+   - Suppose we can suppose ALL subproblems (!) for O(k, j-1)! that would be dope.
+   - Can we use that to solve O(k, j)?
+   - Either we do no select item j: then O(k, j) = O(k, j-1)
+   - Or we do: then O(k, j) = vj + O(k-wj, j-1)
+     - (also, O(k, 0) = 0)
+   - Do we have overlapping subproblems? Well yes.
+   - How large is our table? Depends on k, which could be exponenential (shit)
+     - runtime is O(k * j), I think? If you use DP
+       
+   - A note on building the table from the bottom up: think, 'what do I need to solve the 
+     next largest problem?'
+
+   - Also, you can 'trace through' your table to get the actual solution (not just the 'is it solvable')!
+     - for each entry in your table, decrement j by one. Does the value change? If so, you selected the item.
+     - You must also decrement the total value appropriately!
+
+   - OK! So, we solved P = NP right? No. K can be exponentially large.
+   - I.e., the size of K is exponential in the number of bits representing K.
+   - It will work great if we can guarantee K is smallish, though!!
+     
+   - Very efficient so long as you can fit the table in memory.
+
+
+** L4 - Branch and Bound
+
+   - Introduce branch and bound
+   - Introduce relaxation
+        
+   - Basic idea: exhaustive search
+   - Create a tree, each branch corresponds to and xi
+   - Follow tree down
+
+   - Can we shrink the size of the tree?
+
+   - Idea: can we create upper / lower bounds (relaxed bounds) on the solution?
+
+   - First relaxation: relax capacity constraint
+     - Without this constraint, you just select all item. So now we have an upper bound.
+
+   - Idea: begin searchin the tree
+   - Each time an item doesn't fit, that reduces the optistic bound
+   - If you reach the optimistic bound, there's no need to continue searching any node
+     with the same (or lower) bound
+   
+   - I.e.: 
+     - track best soln. so far
+     - mark nodes with optimistic eval.
+     - If optimistic ever goes below the best so far, terminate search
+   
+   - modification: suppose we can take only PART of an item! ie., each xi is a float 0 <= xi <= 1
+   - fuck, now this is harder. Or is it?
+   - this is called a 'linear relaxation'
+   - Actually, with this relaxation, solving knapsack is easier!
+     - there's a greed solution: take as much of the dense items as possible first
+   - We can use this to form a better optimistic bound!
+   - Again: so long as computing the bound is fast, we can compute it. Then update the bound 
+     as decisions are made.
+
+   - General note: a lower optimistic bound will be tighter (and thus better)
+  
+   - So how TF does this affect runtime? It depends on how much you can prune.
+   - 
+     
+
+** L5 - Search strategies
+   
+   - Can we further improve performance with a better search strategy?
+     - We want to hit good solutions ASAP.
+
+   - Initial ideas:
+     - Depth first - prune when a node is worse than best solution so far (already covered)
+     - Best first - search nodes with best estimation for first search
+     - Least-discrepancy - use a greedy heuristic
+       
+   - Depth first:
+     - Don't start pruning until you have a complete solution
+     - Prunes when an estimate is worse than a known solution
+     - Is it memory efficient? Yes. Memory use O(j), since we don't have to actually store the tree
+   
+   - Best first:
+     - keep a queue of the best-looking nodes so far
+     - Each time, expand the first one
+     - prunes any time nodes are worse than a found solution...
+     - memory efficient? not really. could need to store a queue node for EVERYTHING in your tree,
+       there are 2^j nodes.
+       
+   - Limited discrepancy search:
+     - Assume our greedy algo is pretty good
+     - Search tree is binary
+     - Left-branch means you follow the greedy method
+     - right-branch means you do the opposite
+     - Idea: try to deviate from greedy as seldom as possible
+       - basically: go left first!
+          
+     - Prunes at the same time as DF
+     - Is it memory efficient? Depends on the impllementation...
+       - Remember, we start going left at the TOP of the tree...
+       - One solution to this is a queue (inefficient)
+       - Other solution - rewinding?      
+
+** L6 - Getting started with problems
+   
+   - Results driven :)
+   - We have so far learned:
+     - Greedy
+   - Quality vs scalability... both are good! You must balance...
+   - You may not know techniques yet, so come back to problems
+   - 
